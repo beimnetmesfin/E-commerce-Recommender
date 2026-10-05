@@ -37,10 +37,32 @@ def test_filter_approved():
 def test_filter_stock_in():
     candidates=pd.DataFrame(
         {
-            "item_id":[1,2],
-            "stock":[10,0]
+            "item_id":[1,2,3],
+            "stock":[10,0,8],
+            "reserved_stock":[2,0,4],
+            "inventory_status":["available","out_of_stock","discontinued"]
         }
     )
     rules=BusinessRules()
     result=rules.filter_in_stock(candidates)
     assert result["item_id"].tolist()==[1]
+
+def test_filter_not_purchased():
+    candidates=pd.DataFrame(
+            {
+                "item_id":[1,2,3,4],
+                "stock":[10,0,8,5],
+                "reserved_stock":[2,0,4,0],
+                "inventory_status":["available","out_of_stock","discontinued","available"]
+            })
+    user_events=pd.DataFrame({
+        "user_id":[1,2,3,4],
+        "item_id":[1,2,3,4],
+        "event_type":["purchase","like","like","like"],
+        "event_status":["completed","delivered","paid","pending"]
+    })
+
+    rules=BusinessRules()
+    result=rules.filter_not_purchased(candidates,user_events["user_id"],user_events)
+    assert result["item_id"].to_list()==[2,3,4]
+    

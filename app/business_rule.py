@@ -15,6 +15,7 @@ class BusinessRules:
         missing_columns=[col for col in self.required_events_columns if col not in user_events.columns]
         if missing_columns:
             raise ValueError(f"Missing required columns :{missing_columns}")
+
         
     def filter_active(self,candidates:pd.DataFrame)->pd.DataFrame:
         return candidates[candidates["is_active"]==True].copy()
@@ -24,19 +25,24 @@ class BusinessRules:
 
     def filter_approved(self,candidates:pd.DataFrame)->pd.DataFrame:
         return candidates[candidates["approval_status"]=="approved"].copy()
-
-    def filter_in_stock(self,candidates:pd.DataFrame)->pd.DataFrame:
-        return candidates[candidates["stock"]>0].copy()
     
     def filter_not_deleted(self,candidates:pd.DataFrame)->pd.DataFrame:
         return candidates[candidates["deleted_at"].isna()].copy()
 
     def filter_available_now(self,candidates:pd.DataFrame)->pd.DataFrame:
         now=pd.Timestamp.now()
-        available_from=pd.to_datetime(candidates["available_from"])
-        available_until=pd.to_datetime(candidates["available_until"])
+        available_from=pd.to_datetime(candidates["available_from"],errors="coerce")
+        available_until=pd.to_datetime(candidates["available_until"],errors="coerce")
         valid_from=(available_from.isna()|(available_from<=now))
         valid_until=(available_until.isna()|(available_until>=now))
+
+    def filter_in_stock(self,candidates:pd.DataFrame)->pd.DataFrame:
+        available_stock=(candidates["stock"]-candidates["reserved_stock"])
+        #The inventory status should be in the website code or in kafka
+        valid_status=~candidates["inventory_status"].isin(
+            ["out_of_stock","unavailable","discontinued"])
+
+        return candidates[(available_stock>0)&valid_status].copy()
 
     def filter_not_purchased(self,candidates:pd.DataFrame,
                              user_id,
@@ -53,13 +59,20 @@ class BusinessRules:
     def remove_duplicates(self,candidates:pd.DataFrame)->pd.DataFrame:
         return candidates.drop_duplicates(subset=["item_id"]).copy()
 
-    def apply_rules(self,candidates:pd.DataFrame)->pd.DataFrame:
+    def apply_rules(self,candidates:pd.DataFrame,
+                    user_id,
+                    user_events:pd.DataFrame)->pd.DataFrame:
 
-        self.validate_columns(candidates)
+        self.validate_products_columns(candidates)
+        self.validate_events_columns(user_events)
         candidates=self.filter_active(candidates)
         candidates=self.filter_visible(candidates)
         candidates=self.filter_approved(candidates)
+        candidates=self.filter_not_deleted(candidates)
+        candidates=self.filter_available_now(candidates)
         candidates=self.filter_in_stock(candidates)
-
+        candidates=self.filter_not_purchased(candidates,user_id,user_events)
+        candidates=self.remove_duplicates(candidates)
+        
         return candidates
         
