@@ -75,4 +75,3 @@ class BusinessRules:
         candidates=self.remove_duplicates(candidates)
         
         return candidates
-        

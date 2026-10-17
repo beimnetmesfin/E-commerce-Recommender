@@ -1,13 +1,12 @@
 import pandas as pd
 from pathlib import Path
 #from app.config import products_file,user_events_file
-
 class DataLoader:
     def __init__(self,products_path:Path,user_events_path:Path):
         self.products_path=Path(products_path)
         self.user_events_path=Path(user_events_path)
 
-    def _read_csv(self,path:Path) -> pd.DataFrame:
+    def _read_csv(self,path:Path)-> pd.DataFrame:
         if not path.exists():
             raise FileNotFoundError(f"File is not found in this path {path}")
         return pd.read_csv(path,sep="\t")
