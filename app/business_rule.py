@@ -1,31 +1,24 @@
 import pandas as pd
-
 class BusinessRules:
     completed_order_status=["completed","delivered","paid","confirmed"]
     required_events_columns=["user_id","item_id","event_type","order_status"]
     required_products_columns=["item_id","stock","reserved_stock","inventory_status","deleted_at",
                                       "available_from","available_until","is_active","is_visible","approval_status"]
-
     def validate_products_columns(self,candidates:pd.DataFrame)->None:
         missing_columns=[col for col in self.required_products_columns if col not in candidates.columns]
         if missing_columns:
             raise ValueError(f"missing required columns :{missing_columns}")
-        
     def validate_events_columns(self,user_events:pd.DataFrame)->None:
         missing_columns=[col for col in self.required_events_columns if col not in user_events.columns]
         if missing_columns:
             raise ValueError(f"Missing required columns :{missing_columns}")
 
-        
     def filter_active(self,candidates:pd.DataFrame)->pd.DataFrame:
         return candidates[candidates["is_active"]==True].copy()
-
     def filter_visible(self,candidates:pd.DataFrame)->pd.DataFrame:
         return candidates[candidates["is_visible"]==True].copy()
-
     def filter_approved(self,candidates:pd.DataFrame)->pd.DataFrame:
         return candidates[candidates["approval_status"]=="approved"].copy()
-    
     def filter_not_deleted(self,candidates:pd.DataFrame)->pd.DataFrame:
         return candidates[candidates["deleted_at"].isna()].copy()
 
@@ -43,11 +36,9 @@ class BusinessRules:
             ["out_of_stock","unavailable","discontinued"])
 
         return candidates[(available_stock>0)&valid_status].copy()
-
     def filter_not_purchased(self,candidates:pd.DataFrame,
                              user_id,
                              user_events:pd.DataFrame)->pd.DataFrame:
-
         successful_purchase=user_events[
             (user_events["user_id"]==user_id)&
             (user_events["event_type"]=="purchase")&
@@ -58,7 +49,7 @@ class BusinessRules:
 
     def remove_duplicates(self,candidates:pd.DataFrame)->pd.DataFrame:
         return candidates.drop_duplicates(subset=["item_id"]).copy()
-
+    
     def apply_rules(self,candidates:pd.DataFrame,
                     user_id,
                     user_events:pd.DataFrame)->pd.DataFrame:
@@ -73,5 +64,4 @@ class BusinessRules:
         candidates=self.filter_in_stock(candidates)
         candidates=self.filter_not_purchased(candidates,user_id,user_events)
         candidates=self.remove_duplicates(candidates)
-        
         return candidates

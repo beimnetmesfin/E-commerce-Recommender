@@ -5,7 +5,6 @@ import numpy as np
 class Ranker:
     """
     Ranker egilibale product candidates and select a diverse Top-k list
-
     Resposnebilities
     1 Prepare the products feature of validates ranking inputs
     2 prepare the normalized ranking features
@@ -21,7 +20,6 @@ class Ranker:
         "popularity":0.10,
         "fresheness":0.10
     }
-
     def __init__(self,
                  top_k:int=10,
                  max_per_category:Optional[int]=3,
@@ -29,9 +27,6 @@ class Ranker:
                  rating_prior:float=3.5,
                  prior_reviews:int=10,
                  freshness_haf_life_days:int=180)->None:
-        
-        
-
         if top_k<1:
             raise ValueError("top_k must be at least 1.")
         if(max_per_category is not None and max_per_category<1):
@@ -56,9 +51,7 @@ class Ranker:
             raise ValueError("weights must be finite, non-negative numbers")
         if sum(self.weights.values())<=0:
             raise ValueError("At least one weight must be positive.")
-
     def validate_candidates(self,candidates:pd.DataFrame)->None:
-            
             if not isinstance(candidates,pd.DataFrame):
                 raise ValueError("cadidates must be a pandas DataFrame")
             
@@ -71,8 +64,7 @@ class Ranker:
             if candidates["item_id"].duplicated().any():
                 raise ValueError("The candidates must contain unique item_id and cannot duplicate ")
 
-    def prepare_feature(self,candidates:pd.DataFrame)->pd.DataFrame:
-            
+    def prepare_feature(self,candidates:pd.DataFrame)->pd.DataFrame:  
             """creating normalized scoring feature"""
             ranked=candidates.copy()
             #FAISS Similarity between 0.0 and 1.0 for scoring
@@ -85,7 +77,6 @@ class Ranker:
                 raise ValueError("similarty_score must contain valid finite values")
             ranked["similarity_signal"]=similarity.clip(
                 lower=0.0,upper=1.0)
-
             #Rating quality :account for both the average rating and return of reviews
             if "average_rating" in ranked.columns:
                 rating=pd.to_numeric(

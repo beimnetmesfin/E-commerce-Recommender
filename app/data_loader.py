@@ -6,7 +6,7 @@ class DataLoader:
         self.products_path=Path(products_path)
         self.user_events_path=Path(user_events_path)
 
-    def _read_csv(self,path:Path)-> pd.DataFrame:
+    def _read_csv(self,path:Path)->pd.DataFrame:
         if not path.exists():
             raise FileNotFoundError(f"File is not found in this path {path}")
         return pd.read_csv(path,sep="\t")
@@ -18,7 +18,6 @@ class DataLoader:
         
     def load_products(self,clean:bool=True)->pd.DataFrame:
         df=self._read_csv(self.products_path)
-
         required_columns = [
             "item_id",
             "title",
@@ -39,7 +38,7 @@ class DataLoader:
             "total_sales"
             "image_url"
         ]
-
+        self.validate_columns(df,required_columns,"products.csv")
         if clean:
             df=df.copy()
             #text standaridze and data cleaning
@@ -83,12 +82,10 @@ class DataLoader:
 
             #Remove the duplicates in the dataset
             df=df.drop_duplicates(subset=["item_id"],inplace=False).reset_index(drop=True)
-
         return df
-
+    
     def load_user_events(self,clean:bool=True)->pd.DataFrame:
         df=self._read_csv(self.user_events_path)
-
         required_columns=[
             "user_id",
             "item_id",
@@ -96,7 +93,6 @@ class DataLoader:
             "recency_rank"
         ]
         self.validate_columns(df,required_columns,"user_events.csv")
-
         if clean:
             df=df.copy()
             numeric_col=[

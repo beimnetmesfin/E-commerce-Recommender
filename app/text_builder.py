@@ -1,5 +1,4 @@
 import pandas as pd
-
 semantic_columns=[
     "title",
     "description",
@@ -18,7 +17,6 @@ def validate_semantic_columns(df:pd.DataFrame)->None:
         raise ValueError(f"missing semantic columns :{missing_columns}")
 
 def create_text_embedding(row:pd.Series)->str:
-
     #creates semantic text representation for one product
     return (
         f"Title:{row["title"]}."
@@ -35,8 +33,3 @@ def build_text_embedding(df:pd.DataFrame)->list[str]:
     #Build embedding text for every product
     validate_semantic_columns(df)
     return [create_text_embedding(row) for _,row in df.iterrows()]
-
-   
-
-
-

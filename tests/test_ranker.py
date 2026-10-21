@@ -1,7 +1,6 @@
 import pandas as pd
 from app.ranker import Ranker
 import pytest
-
 @pytest.fixture
 def candidates():
     """samples products for testing the ranker"""
@@ -18,7 +17,6 @@ def candidates():
 def ranker():
     """creating a ranker with default settings."""
     return Ranker(top_k=3,max_per_category=2)
-
 def test_validate_columns(ranker,candidates):
     #candidates must contain required columns and unique IDs
     ranker.validate_candidates(candidates)
@@ -55,7 +53,6 @@ def test_category_diversity(ranker,candidates):
     result=ranker.apply_category_diversity(result,top_k=3)
     assert len(result)<=ranker.top_k
     assert result["category"].value_counts().max()<=2
-
 def test_ranker_returns_top_k(ranker,candidates):
     """The complete pipeline must returns the requested numnber of products"""
     result=ranker.rank(candidates)
@@ -71,7 +68,6 @@ def test_empty_candidates(ranker,candidates):
     empty=pd.DataFrame(columns=["item_id","similarities"])
     result=ranker.rank(empty)
     assert result.empty
-
 def test_invalid_similarity_score(ranker,candidates):
     #Invalid similarity values shoulf=d be rejected
     candidates.loc[0,"similarities"]=float("inf")
@@ -82,8 +78,3 @@ def test_input_is_not_modified(ranker,candidates):
     original=candidates.copy(deep=True)
     ranker.rank(candidates)
     pd.testing.assert_frame_equal(candidates,original)
-
-
-
-
-
