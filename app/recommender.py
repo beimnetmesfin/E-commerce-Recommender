@@ -1,15 +1,16 @@
 import pandas as pd
 class Recommender:
     """Connect all existing componets into one recommendation pipeline"""
-    def __init__(self,load_products,load_events,
+    def __init__(self,load_products,load_events,item_embeddings,
                  build_profile,retrieve_candidates,
-                 apply_business_rule,ranker
+                 apply_business_rules,ranker
                  ):
         self.load_products=load_products
         self.load_events=load_events
+        self.item_embeddings=item_embeddings
         self.build_profile=build_profile
         self.retrieve_candidates=retrieve_candidates
-        self.apply_business_rule=apply_business_rule
+        self.apply_business_rule=apply_business_rules
         self.ranker=ranker
     def recommend_for_user(self,user_id,top_k):
         if not isinstance(user_id,str) or not user_id.strip():
@@ -19,7 +20,7 @@ class Recommender:
         user_events=events[events["user_id"]==user_id]
         if user_events.empty:       
             return pd.DataFrame()
-        profile=self.build_profile(user_events)
+        profile=self.build_profile(user_events,self.item_embeddings,user_id)
         if profile is None:
             return pd.DataFrame()
         candidates=self.retrieve_candidates(profile,products)

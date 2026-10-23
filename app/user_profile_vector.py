@@ -15,7 +15,7 @@ class UserProfileBuilder:
             user_events:pd.DataFrame,
             item_embeddings:np.ndarray,
             user_id:int)->np.ndarray:
-        
+        #Item_embeddings is the item_embeddings of products that the user interacted with in websites
         user_events=user_events[user_events["user_id"]==user_id].copy()
         if user_events.empty:
             raise ValueError(f"No events found for user :{user_id}")

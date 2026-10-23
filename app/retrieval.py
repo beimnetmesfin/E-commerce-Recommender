@@ -5,7 +5,6 @@ from app.faiss_service import FaissService
 class Retriever:
     def __init__(self,faiss_service:FaissService):
         self.faiss_service=faiss_service
-
     def retrieve(self,
                 user_profile:np.ndarrary,
                 products:pd.DataFrame,
