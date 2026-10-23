@@ -1,0 +1,55 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ye-buna Shopping Demo</title>
+</head>
+<body>
+    <h1>Ye-buna Shopping Demo</h1>
+
+    <div>
+        <h2>Running Shoes</h2>
+        <p>Product ID: shoe_101</p>
+        <p>Price: 1500 birr</p>
+
+        <button id="view-button">View Product</button>
+    </div>
+
+    <script>
+        const button = document.getElementById("view-button");
+
+        button.addEventListener("click", async function () {
+
+            // 1. Describe the user's interaction
+            const event = {
+                user_id: "user_001",
+                item_id: "shoe_101",
+                event_type: "click"
+            };
+
+            try {
+                // 2. Send the event to FastAPI
+                const response = await fetch(
+                    "http://127.0.0.1:8000/events",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(event)
+                    }
+                );
+
+                // 3. Read FastAPI's response
+                const result = await response.json();
+
+                console.log("FastAPI received:", result);
+
+            } catch (error) {
+                console.error("Could not send event:", error);
+            }
+        });
+    </script>
+</body>
+</html>
