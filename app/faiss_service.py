@@ -15,7 +15,7 @@ class FaissService:
     def search(self,query_embedding:np.ndarray,k:int=10):
         query_embedding=query_embedding.astype("float32").copy()
         if query_embedding.ndim==1:
-            query_embedding=query_embedding(1,-1)
+            query_embedding=query_embedding.reshape(1,-1)
         faiss.normalize_L2(query_embedding)
         scores,indices=self.index.search(query_embedding,k)
         return scores,indices

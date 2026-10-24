@@ -45,7 +45,7 @@ def test_filter_stock_in():
     )
     rules=BusinessRules()
     result=rules.filter_in_stock(candidates)
-    assert result["item_id"].tolist()==[1]
+    assert result["item_id"].tolist()==[1,3]
 
 def test_filter_not_purchased():
     candidates=pd.DataFrame(

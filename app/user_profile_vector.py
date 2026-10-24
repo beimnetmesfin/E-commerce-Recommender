@@ -4,7 +4,6 @@ from typing import Dict, Optional
 import numpy as np
 import pandas as pd
 
-
 class UserProfileBuilder:
     event_weights: Dict[str, float] = {
         "view": 1.0,

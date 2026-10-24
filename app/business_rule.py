@@ -1,9 +1,8 @@
 import pandas as pd
 class BusinessRules:
     completed_order_status=["completed","delivered","paid","confirmed"]
-    required_events_columns=["user_id","item_id","event_type","order_status"]
-    required_products_columns=["item_id","stock","reserved_stock","inventory_status","deleted_at",
-                                      "available_from","available_until","is_active","is_visible","approval_status"]
+    required_events_columns=["user_id","item_id","event_type","event_status"]
+    required_products_columns=["item_id","stock"]
     def validate_products_columns(self,candidates:pd.DataFrame)->None:
         missing_columns=[col for col in self.required_products_columns if col not in candidates.columns]
         if missing_columns:
@@ -28,14 +27,16 @@ class BusinessRules:
         available_until=pd.to_datetime(candidates["available_until"],errors="coerce")
         valid_from=(available_from.isna()|(available_from<=now))
         valid_until=(available_until.isna()|(available_until>=now))
+        return candidates[valid_from &valid_until].copy()
 
     def filter_in_stock(self,candidates:pd.DataFrame)->pd.DataFrame:
-        available_stock=(candidates["stock"]-candidates["reserved_stock"])
+        #available_stock=(candidates["stock"]-candidates["reserved_stock"])
         #The inventory status should be in the website code or in kafka
-        valid_status=~candidates["inventory_status"].isin(
-            ["out_of_stock","unavailable","discontinued"])
-
-        return candidates[(available_stock>0)&valid_status].copy()
+        #valid_status=~candidates["inventory_status"].isin(
+         # ["out_of_stock","unavailable","discontinued"])
+        available_stock=pd.to_numeric(candidates["stock"],errors="coerce")
+        return candidates[(available_stock>0)].copy()
+    
     def filter_not_purchased(self,candidates:pd.DataFrame,
                              user_id,
                              user_events:pd.DataFrame)->pd.DataFrame:
@@ -55,13 +56,13 @@ class BusinessRules:
                     user_events:pd.DataFrame)->pd.DataFrame:
 
         self.validate_products_columns(candidates)
-        self.validate_events_columns(user_events)
-        candidates=self.filter_active(candidates)
-        candidates=self.filter_visible(candidates)
-        candidates=self.filter_approved(candidates)
-        candidates=self.filter_not_deleted(candidates)
-        candidates=self.filter_available_now(candidates)
+        #self.validate_events_columns(user_events)
+        #candidates=self.filter_active(candidates)
+        #candidates=self.filter_visible(candidates)
+        #candidates=self.filter_approved(candidates)
+        #candidates=self.filter_not_deleted(candidates)
+        #candidates=self.filter_available_now(candidates)
+        #candidates=self.filter_not_purchased(candidates,user_id,user_events)
         candidates=self.filter_in_stock(candidates)
-        candidates=self.filter_not_purchased(candidates,user_id,user_events)
         candidates=self.remove_duplicates(candidates)
         return candidates

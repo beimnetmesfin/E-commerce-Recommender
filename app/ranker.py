@@ -13,7 +13,7 @@ class Ranker:
     5 Apply category diversity
     6 Return the final recommendations
     """
-    reqiured_columns=["item_id","similarities"]
+    reqiured_columns=["item_id","similarity_score"]
     default_weights={
         "similarity":0.70,
         "rating":0.10,
@@ -68,7 +68,7 @@ class Ranker:
             """creating normalized scoring feature"""
             ranked=candidates.copy()
             #FAISS Similarity between 0.0 and 1.0 for scoring
-            similarity=pd.to_numeric(ranked["similarities"],errors="coerce")
+            similarity=pd.to_numeric(ranked["similarity_score"],errors="coerce")
             similarity=similarity.replace(
                 [np.inf,-np.inf],np.nan
             )
