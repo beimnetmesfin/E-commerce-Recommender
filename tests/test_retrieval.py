@@ -44,7 +44,7 @@ def test_retrieve_attaches_similarity_scores(
 ):
     candidates=retriever.retrieve(user_profile,products,k=3)
     expected=[0.95,0.90,0.80]
-    assert np.allclose(candidates["similarities"].values,expected)
+    assert np.allclose(candidates["similarity_score"].values,expected)
 def test_retrieve_resets_index(
         retriever,products,user_profile
 ):

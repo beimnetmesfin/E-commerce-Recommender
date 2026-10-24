@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="Ye-buna Event API")
+app = FastAPI(title="E-commerce Event API")
 
 app.add_middleware(
     CORSMiddleware,

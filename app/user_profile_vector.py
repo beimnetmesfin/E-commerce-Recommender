@@ -1,63 +1,123 @@
-from typing import Dict
-import pandas as pd
+
+from typing import Dict, Optional
+
 import numpy as np
+import pandas as pd
 
-# The user profile vector is the important because 
-# it converts the user behavoiur into the quary vector to search in FAISS
+
 class UserProfileBuilder:
-    event_weights:Dict[str,float]={
-        "view":1.0,"click":2.0,"like":3.0,"add_to_cart":4.0,"skip":0.5
-        }
-    def __init__(self,embedding_dimension:int):
-        self.embedding_dimnesion=embedding_dimension
+    event_weights: Dict[str, float] = {
+        "view": 1.0,
+        "click": 2.0,
+        "like": 3.0,
+        "add_to_cart": 4.0,
+        "purchase": 5.0,
+        "skip": 0.5,
+    }
 
-    def build_profile(self,
-            user_events:pd.DataFrame,
-            item_embeddings:np.ndarray,
-            user_id:int)->np.ndarray:
-        #Item_embeddings is the item_embeddings of products that the user interacted with in websites
-        user_events=user_events[user_events["user_id"]==user_id].copy()
+    def __init__(self, embedding_dimension: int):
+        self.embedding_dimension = embedding_dimension
+
+    def build_profile(
+        self,
+        user_events: pd.DataFrame,
+        item_embeddings: np.ndarray,
+        user_id: str | int,
+        item_id_to_index: Optional[Dict[int, int]] = None,
+    ) -> np.ndarray:
         if user_events.empty:
-            raise ValueError(f"No events found for user :{user_id}")
-        if item_embeddings.ndim!=2:
-            raise ValueError("Item embeddings must be 2D matrix")
-        if item_embeddings.shape[1]!=self.embedding_dimnesion:
+            raise ValueError(f"No events found for user: {user_id}")
+
+        if item_embeddings.ndim != 2:
+            raise ValueError("Item embeddings must be a 2D matrix")
+
+        if item_embeddings.shape[1] != self.embedding_dimension:
             raise ValueError("Embedding dimension does not match")
 
-        user_events["event_weight"]=user_events["event_type"].map(self.event_weights)
-        if user_events["event_weight"].isna().any():
-            unknown_events=(
-                user_events.loc[
-                    user_events["event_weight"].isna(),
-                    "event_type"
-                ].unique().tolist()
-            )
+        required_columns = {"item_id", "event_type", "recency_rank"}
+        missing = required_columns - set(user_events.columns)
+
+        if missing:
             raise ValueError(
-                f"Unknown event types :{unknown_events}")
-        user_events["recency_weight"]=(1.0/user_events["recency_rank"])
-        user_events["final_weight"]=(
-            user_events["event_weight"]*user_events["recency_weight"]
+                f"User events are missing required columns: {sorted(missing)}"
+            )
+
+        events = user_events.copy()
+
+        # Convert event types into preference weights.
+        events["event_type"] = (
+            events["event_type"].astype(str).str.strip().str.lower()
+        )
+        events["event_weight"] = events["event_type"].map(self.event_weights)
+
+        if events["event_weight"].isna().any():
+            unknown_events = events.loc[
+                events["event_weight"].isna(), "event_type"
+            ].unique().tolist()
+            raise ValueError(f"Unknown event types: {unknown_events}")
+
+        # Ensure item IDs are numeric for the mapping.
+        events["item_id"] = pd.to_numeric(
+            events["item_id"], errors="raise"
+        ).astype(int)
+
+        # Map each item ID to its actual embedding row.
+        if item_id_to_index is not None:
+            events["item_index"] = events["item_id"].map(item_id_to_index)
+
+            if events["item_index"].isna().any():
+                missing_ids = events.loc[
+                    events["item_index"].isna(), "item_id"
+                ].unique().tolist()
+                raise ValueError(
+                    f"No embedding row mapping found for item IDs: {missing_ids}"
+                )
+
+            events["item_index"] = events["item_index"].astype(int)
+        else:
+            # Default supports the zero-based IDs used in the unit tests.
+            events["item_index"] = events["item_id"]
+
+        if (
+            (events["item_index"] < 0).any()
+            or (events["item_index"] >= len(item_embeddings)).any()
+        ):
+            raise ValueError(
+                "An item ID does not map to a valid embedding row. "
+                "Provide item_id_to_index for non-zero-based IDs."
+            )
+
+        # Rank 0 means most recent; adding 1 prevents division by zero.
+        events["recency_rank"] = pd.to_numeric(
+            events["recency_rank"], errors="coerce"
+        ).fillna(0)
+
+        events["recency_weight"] = 1.0 / (
+            events["recency_rank"].clip(lower=0) + 1.0
         )
 
-        weighted_vectors=[]
-        weights=[]
-        for _,event in user_events.iterrows():          
-            item_index=int(event["item_id"])
-            vector=item_embeddings[item_index]
-            weighted_vectors.append(
-                vector*event["final_weight"]
-            )
-            weights.append(event["final_weight"])
-        weighted_sum=np.sum(weighted_vectors,axis=0)
-        total_weights=np.sum(weights)
-        if total_weights<=0:                        
-            raise ValueError("Total profile weight must be greater than zero")
-        profile_vector=(weighted_sum/total_weights)
-        norm=np.linalg.norm(profile_vector)
-        if norm==0:    
-            raise ValueError("User profile vector has mangnitude")
-        profile_vector=(profile_vector/norm).astype(np.float32)
-        return profile_vector
-                    
+        events["final_weight"] = (
+            events["event_weight"] * events["recency_weight"]
+        )
 
+        indices = events["item_index"].to_numpy(dtype=int)
+        weights = events["final_weight"].to_numpy(dtype=np.float32)
 
+        # Compute the weighted average of the interacted item embeddings.
+        weighted_sum = np.sum(
+            item_embeddings[indices] * weights[:, None],
+            axis=0,
+        )
+        total_weight = float(weights.sum())
+
+        if total_weight <= 0 or not np.isfinite(total_weight):
+            raise ValueError("Total profile weight must be positive and finite")
+
+        profile_vector = weighted_sum / total_weight
+        norm = np.linalg.norm(profile_vector)
+
+        if norm == 0 or not np.isfinite(norm):
+            raise ValueError("User profile vector has an invalid magnitude")
+
+        # Normalize the final profile for cosine-similarity retrieval.
+        return (profile_vector / norm).astype(np.float32)

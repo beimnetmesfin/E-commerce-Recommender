@@ -9,7 +9,7 @@ class DataLoader:
     def _read_csv(self,path:Path)->pd.DataFrame:
         if not path.exists():
             raise FileNotFoundError(f"File is not found in this path {path}")
-        return pd.read_csv(path)
+        return pd.read_csv(path,sep=None,engine="python")
     
     def validate_columns(self,df:pd.DataFrame,required_columns:list,name:str)->None:
         missing=[col for col in required_columns if col not in df.columns]
