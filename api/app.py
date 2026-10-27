@@ -44,7 +44,7 @@ def initialize_database():
 @app.get("/")
 def home():
     return {
-        "message": "Ye-buna Recommendation API is running",
+        "message": "Yebuna Recommendation API is running",
         "status": "ok",
     }
 

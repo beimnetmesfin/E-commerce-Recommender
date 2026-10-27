@@ -539,3 +539,13 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   .modal-product-layout > img { max-height: 260px; }
   .floating-note { font-size: 10px; }
 }
+
+/* Ensure hidden modals stay hidden */
+.modal-backdrop[hidden] {
+  display: none !important;
+}
+
+/* Display the backdrop when the modal is open */
+.modal-backdrop:not([hidden]) {
+  display: grid;
+}

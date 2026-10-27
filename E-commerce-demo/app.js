@@ -364,7 +364,7 @@ function productCard(product) {
             ${stock <= 0 ? "disabled" : ""}>+</button>
         </div>
         <div class="stock-note">${stock > 0 ? `${stock} in stock` : "Out of stock"}</div>
-        <button class="secondary-button full-button" style="margin-top:10px"
+        <button type="button" class="secondary-button full-button" style="margin-top:10px"
           data-action="details" data-id="${escapeHTML(id)}">View details</button>
       </div>
     </article>`;
@@ -397,12 +397,13 @@ function findProduct(id) {
   return state.products.find((product) => productId(product) === String(id));
 }
 
+
 function openProductDetails(product) {
   if (!product) return;
 
-  recordEvent(product, "view");
-  recordEvent(product, "click");
+  const id = productId(product);
 
+  // Render the product details first.
   $("#productDetails").innerHTML = `
     <div class="modal-product-layout">
       ${imageMarkup(product)}
@@ -410,31 +411,51 @@ function openProductDetails(product) {
         <p class="eyebrow">${escapeHTML(product.category || "PRODUCT")}</p>
         <h2 id="modalTitle">${escapeHTML(product.title || "Product details")}</h2>
         <p class="muted">Sold by ${escapeHTML(product.creator_name || "Ye-buna seller")}</p>
-        <div class="product-rating">★ ${numberValue(product.average_rating).toFixed(1)}
-          (${numberValue(product.total_reviews)} reviews)</div>
+        <div class="product-rating">
+          ★ ${numberValue(product.average_rating).toFixed(1)}
+          (${numberValue(product.total_reviews)} reviews)
+        </div>
         <p class="modal-price">${escapeHTML(formatPrice(product))}</p>
         <p class="modal-description">${escapeHTML(product.description || "No description provided.")}</p>
-        <p class="muted small-text">Product ID: ${escapeHTML(productId(product))}</p>
+        <p class="muted small-text">Product ID: ${escapeHTML(id)}</p>
         <p class="muted small-text">Stock: ${numberValue(product.stock)}</p>
         <div class="modal-actions">
-          <button class="primary-button" data-action="add" data-id="${escapeHTML(productId(product))}">
+          <button type="button" class="primary-button"
+            data-action="add" data-id="${escapeHTML(id)}">
             Add to cart
           </button>
-          <button class="secondary-button" data-action="like" data-id="${escapeHTML(productId(product))}">
-            ${state.liked.has(productId(product)) ? "♥ Liked" : "♡ Like"}
+          <button type="button" class="secondary-button"
+            data-action="like" data-id="${escapeHTML(id)}">
+            ${state.liked.has(id) ? "♥ Liked" : "♡ Like"}
           </button>
-          <button class="secondary-button" data-action="skip" data-id="${escapeHTML(productId(product))}">
+          <button type="button" class="secondary-button"
+            data-action="skip" data-id="${escapeHTML(id)}">
             Not interested
           </button>
         </div>
       </div>
     </div>`;
 
+  // Open the modal immediately.
   $("#productModal").hidden = false;
+
+  // Record events in the background; do not wait for the API.
+  void recordEvent(product, "view");
+  void recordEvent(product, "click");
 }
 
+
 function closeProductDetails() {
-  $("#productModal").hidden = true;
+  console.trace("PRODUCT MODAL CLOSED");
+
+  const modal = document.querySelector("#productModal");
+
+  console.log("Modal before closing:", {
+    hidden: modal.hidden,
+    time: new Date().toISOString()
+  });
+
+  modal.hidden = true;
 }
 
 function toggleLike(product) {
