@@ -1,6 +1,5 @@
 
 from datetime import datetime, timezone
-
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -10,12 +9,12 @@ from api.event_database import (
     save_event,
     get_events,
 )
-from app.recommendation_engine import recommend_for_user
+from app.recommendation_engine import recommend_for_user,get_similar_products
 
 
 app = FastAPI(
-    title="Ye-buna Recommendation API",
-    description="API for the Ye-buna product recommendation platform",
+    title="E-commerce Recommendation API",
+    description="API for the E-commerce product recommendation platform",
     version="0.2.0",
 )
 
@@ -44,7 +43,7 @@ def initialize_database():
 @app.get("/")
 def home():
     return {
-        "message": "Yebuna Recommendation API is running",
+        "message": "E-commerce Recommendation API is running",
         "status": "ok",
     }
 
@@ -98,3 +97,25 @@ def get_recommendations(
 
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+@app.get("/items/{item_id}/similar")
+def get_similar_items(
+    item_id:int,
+    top_k:int=Query(default=4,ge=1,le=50),
+):
+    try:
+        similar_products=get_similar_products(
+            item_id=item_id,top_k=top_k
+        )
+        return {
+            "item_id":item_id,
+            "count":len(similar_products),
+            "similar_products":similar_products.to_dict(
+                orient="records"
+            )
+        }
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc

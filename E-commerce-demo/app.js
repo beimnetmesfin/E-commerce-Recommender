@@ -400,7 +400,6 @@ function findProduct(id) {
 
 function openProductDetails(product) {
   if (!product) return;
-
   const id = productId(product);
 
   // Render the product details first.

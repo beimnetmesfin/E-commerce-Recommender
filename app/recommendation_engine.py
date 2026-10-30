@@ -1,6 +1,5 @@
 
 import numpy as np
-
 from app.config import (
     products_file,
     user_events_file,
@@ -99,4 +98,10 @@ def recommend_for_user(user_id, top_k=10):
     return recommender.recommend_for_user(
         user_id=user_id,
         top_k=top_k,
+    )
+def get_similar_products(item_id,top_k=4):
+    """Generate similar products recommendations."""
+    return recommender.get_similar_products(
+        item_id=item_id,
+        top_k=top_k
     )

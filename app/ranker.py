@@ -182,7 +182,7 @@ class Ranker:
             category=row["category"]
             if pd.isna(category) or not str(category).strip():
                 #unknown categories do not all share one limit
-                category=f"__unknown_{row["category"]}"
+                category=f"__unknown_{index}"
             count=category_counts.get(category,0)
             if count<self.max_per_category:
                 selected_indices.append(index)

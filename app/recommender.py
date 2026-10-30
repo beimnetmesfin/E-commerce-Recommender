@@ -79,3 +79,47 @@ class Recommender:
             return self.ranker.rank(eligible)
 
         return self.ranker.rank(eligible, top_k=top_k)
+    def get_similar_products(self,item_id:int,top_k=10):
+        """Return products similar to a selected product."""
+
+        if top_k is not None and(
+            not isinstance(top_k,int)
+            or isinstance(top_k,bool)
+            or top_k<=0
+        ):      
+            raise ValueError("top_k must be positive")
+        
+        products=self.load_products()
+        if products.empty:
+            return pd.DataFrame()
+        
+        #FInd the selected products embeddings row
+        item_id_to_index={
+            int(value):index
+            for index,value in enumerate(products["item_id"])
+        }
+        try:
+            selected_index=item_id_to_index[int(item_id)]
+        except (KeyError,TypeError,ValueError):
+            raise ValueError(f"Unknown item_id :{item_id}")
+        
+        #Use the selected product embeddings as the FAISS query
+        query_embeddings=self.item_embeddings[selected_index]
+
+        #Retrieve nearest products using the exisiting retrieval componets
+        candidates=self.retrieve_candidates(query_embeddings,products)
+        if candidates is None or candidates.empty:
+            return pd.DataFrame()
+        #Remove the product the customers  is currently viewing
+        candidates=candidates[candidates["item_id"].astype(str)!=str(item_id)].copy()
+        if candidates.empty:
+            return pd.DataFrame()
+        #Apply business rule without a specific user
+        eligible=self.apply_business_rules(
+            candidates,
+            None,
+            pd.DataFrame(),
+        )
+        if eligible is None or eligible.empty:
+            return pd.DataFrame()
+        return self.ranker.rank(eligible,top_k=top_k)
