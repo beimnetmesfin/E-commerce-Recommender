@@ -155,7 +155,6 @@ function getEvents() {
   return readStorage(storageKey("events"), []);
 }
 
-
 async function recordEvent(product, eventType) {
   const event = {
     user_id: state.userId,
@@ -201,8 +200,6 @@ async function recordEvent(product, eventType) {
   await updateRecommendations();
 }
 
-
-
 function getLikes() {
   return readStorage(storageKey("likes"), []);
 }
@@ -219,7 +216,6 @@ function loadUserState() {
   updateCartCount();
   updateActivitySummary();
 }
-
 
 async function loadProducts() {
   const status = $("#statusMessage");
