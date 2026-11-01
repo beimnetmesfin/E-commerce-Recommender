@@ -16,6 +16,7 @@ user_events_file=data_dir/"user_events.csv"
 
 item_embeddings_file=models_dir/"item_embeddings.npy"
 faiss_index_file=models_dir/"faiss_index.index"
+item_ids_file = models_dir / "item_ids.npy"
 
 embedding_model_name=("sentence-transformers/"
 "paraphrase-multilingual-MiniLM-L12-v2")
